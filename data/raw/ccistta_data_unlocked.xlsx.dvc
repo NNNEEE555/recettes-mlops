@@ -1,0 +1,5 @@
+outs:
+- md5: 6c8389fd6ddd327893f251cb263c3815
+  size: 2068084
+  hash: md5
+  path: ccistta_data_unlocked.xlsx

@@ -1,0 +1,5 @@
+outs:
+- md5: e13b08a981618c8fd902ddca248baa20
+  size: 1666222
+  hash: md5
+  path: recettes_clean.xlsx

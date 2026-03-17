@@ -96,6 +96,9 @@ df.loc[
 # 7: Imputer la référence produit
 df["produit_ref"] = df["produit_ref"].fillna("Inconnu")
 
+# Ordonner les données chronologiquement
+df = df.sort_values(by=["annee", "month", "jour","mois"])
+
 #  sauvegarder dataset propre
 
 df.to_sql(

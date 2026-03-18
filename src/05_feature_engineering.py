@@ -24,7 +24,6 @@ df["trimestre"] = df["date"].dt.quarter
 df["année_mois"] = df["date"].dt.to_period("M").astype(str)
 
 # 4. Sauvegarder le dataset enrichi transactionnel
-#    (données initiales + nouvelles colonnes)
 df.to_sql(
     "recettes_features",
     engine,

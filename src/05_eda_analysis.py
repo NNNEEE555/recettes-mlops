@@ -127,7 +127,7 @@ plt.tight_layout()
 plt.show()
 
 
-# . Analyse par antenne
+# 7. Analyse par antenne
 analyse_antenne = df_recettes_antenne.groupby(["antenne", "annee"], as_index=False).agg(
     recettes_totales=("recettes", "sum")
 )

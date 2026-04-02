@@ -21,8 +21,11 @@ GLOBAL_FEATURES = [
     "lag_3",
     "lag_6",
     "moyenne_mobile",
-    "rolling_6",
     "transactions",
+    "transactions_lag_1",
+    "transactions_lag_3",
+    "transactions_rolling_3",
+    "transactions_diff",
     "month_sin",
     "month_cos",
     "trend",
@@ -36,8 +39,11 @@ SEGMENT_NUM_FEATURES = [
     "lag_3",
     "lag_6",
     "moyenne_mobile",
-    "rolling_6",
     "transactions",
+    "transactions_lag_1",
+    "transactions_lag_3",
+    "transactions_rolling_3",
+    "transactions_diff",
     "month_sin",
     "month_cos",
     "trend",
@@ -75,8 +81,11 @@ def load_global_data():
         lag_3,
         lag_6,
         moyenne_mobile,
-        rolling_6,
         transactions,
+        transactions_lag_1,
+        transactions_lag_3,
+        transactions_rolling_3,
+        transactions_diff,
         month_sin,
         month_cos,
         trend,
@@ -104,8 +113,11 @@ def load_segment_tables():
                 lag_3,
                 lag_6,
                 moyenne_mobile,
-                rolling_6,
                 transactions,
+                transactions_lag_1,
+                transactions_lag_3,
+                transactions_rolling_3,
+                transactions_diff,
                 month_sin,
                 month_cos,
                 trend,
@@ -123,8 +135,11 @@ def load_segment_tables():
                 lag_3,
                 lag_6,
                 moyenne_mobile,
-                rolling_6,
                 transactions,
+                transactions_lag_1,
+                transactions_lag_3,
+                transactions_rolling_3,
+                transactions_diff,
                 month_sin,
                 month_cos,
                 trend,
@@ -142,8 +157,11 @@ def load_segment_tables():
                 lag_3,
                 lag_6,
                 moyenne_mobile,
-                rolling_6,
                 transactions,
+                transactions_lag_1,
+                transactions_lag_3,
+                transactions_rolling_3,
+                transactions_diff,
                 month_sin,
                 month_cos,
                 trend,
@@ -161,8 +179,11 @@ def load_segment_tables():
                 lag_3,
                 lag_6,
                 moyenne_mobile,
-                rolling_6,
                 transactions,
+                transactions_lag_1,
+                transactions_lag_3,
+                transactions_rolling_3,
+                transactions_diff,
                 month_sin,
                 month_cos,
                 trend,
@@ -193,22 +214,32 @@ def load_segment_tables():
 def evaluate_global():
     payload = joblib.load(MODELS_DIR / "xgb_global.pkl")
     model = payload["model"]
+    target_transform = payload.get("target_transform", None)
 
     df = load_global_data()
 
     train_df = df.iloc[:-3].copy()
     test_df = df.iloc[-3:].copy()
 
-    model.fit(train_df[GLOBAL_FEATURES], train_df["recettes"])
-    y_pred = model.predict(test_df[GLOBAL_FEATURES])
-    
+    X_train = train_df[GLOBAL_FEATURES]
+    X_test = test_df[GLOBAL_FEATURES]
+
+    if target_transform == "log1p":
+        y_train = np.log1p(train_df["recettes"])
+    else:
+        y_train = train_df["recettes"]
+
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    # Retour à l'échelle réelle
+    if target_transform == "log1p":
+        y_pred = np.expm1(y_pred)
+
     # Graphique Réel vs Prédit
-
-    plt.figure(figsize=(10,5))
-
+    plt.figure(figsize=(10, 5))
     plt.plot(test_df["date"], test_df["recettes"], label="Réel", marker="o")
     plt.plot(test_df["date"], y_pred, label="Prédit", marker="o")
-
     plt.title("Réel vs Prédit - Modèle Global XGBoost")
     plt.xlabel("Date")
     plt.ylabel("Recettes")
@@ -216,6 +247,7 @@ def evaluate_global():
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
+
     mae, rmse, mape = compute_metrics(test_df["recettes"], y_pred)
 
     return [{
@@ -226,14 +258,15 @@ def evaluate_global():
         "n_test": len(test_df),
         "mae": mae,
         "rmse": rmse,
-        "mape": mape 
+        "mape": mape
     }]
 
 
 
 def evaluate_segments():
-    payload = joblib.load(MODELS_DIR / "xgb_segment.pkl") 
+    payload = joblib.load(MODELS_DIR / "xgb_segment.pkl")
     pipeline = payload["pipeline"]
+    target_transform = payload.get("target_transform", None)
 
     df = load_segment_tables()
     results = []
@@ -253,21 +286,26 @@ def evaluate_segments():
         test_df = group.iloc[-test_size:].copy()
 
         X_train = train_df[SEGMENT_NUM_FEATURES + SEGMENT_CAT_FEATURES]
-        y_train = train_df["recettes"]
-
         X_test = test_df[SEGMENT_NUM_FEATURES + SEGMENT_CAT_FEATURES]
+
+        if target_transform == "log1p":
+            y_train = np.log1p(train_df["recettes"])
+        else:
+            y_train = train_df["recettes"]
+
         y_test = test_df["recettes"]
 
         pipeline.fit(X_train, y_train)
         y_pred = pipeline.predict(X_test)
-        
+
+        # Retour à l'échelle réelle
+        if target_transform == "log1p":
+            y_pred = np.expm1(y_pred)
+
         # Graphique Réel vs Prédit (SEGMENT)
-
-        plt.figure(figsize=(8,4))
-
+        plt.figure(figsize=(8, 4))
         plt.plot(test_df["date"], y_test.values, label="Réel", marker="o")
         plt.plot(test_df["date"], y_pred, label="Prédit", marker="o")
-
         plt.title(f"{segment_type} - {segment_value}")
         plt.xlabel("Date")
         plt.ylabel("Recettes")
@@ -275,6 +313,7 @@ def evaluate_segments():
         plt.xticks(rotation=45)
         plt.tight_layout()
         plt.show()
+
         mae, rmse, mape = compute_metrics(y_test, y_pred)
 
         results.append({

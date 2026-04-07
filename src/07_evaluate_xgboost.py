@@ -2,7 +2,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 
 from db_connection import engine
@@ -58,6 +58,7 @@ SEGMENT_CAT_FEATURES = [
 def compute_metrics(y_true, y_pred):
     mae = mean_absolute_error(y_true, y_pred)
     rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    r2 = r2_score(y_true, y_pred)
 
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
@@ -68,7 +69,12 @@ def compute_metrics(y_true, y_pred):
     else:
         mape = np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
 
-    return round(mae, 4), round(rmse, 4), round(mape, 4) if not np.isnan(mape) else None
+    return (
+        round(mae, 4),
+        round(rmse, 4),
+        round(mape, 4) if not np.isnan(mape) else None,
+        round(r2, 4)
+    )
 
 
 def load_global_data():
@@ -248,7 +254,7 @@ def evaluate_global():
     plt.tight_layout()
     plt.show()
 
-    mae, rmse, mape = compute_metrics(test_df["recettes"], y_pred)
+    mae, rmse, mape, r2 = compute_metrics(test_df["recettes"], y_pred)
 
     return [{
         "label": "xgb_global",
@@ -258,7 +264,8 @@ def evaluate_global():
         "n_test": len(test_df),
         "mae": mae,
         "rmse": rmse,
-        "mape": mape
+        "mape": mape,
+        "r2": r2
     }]
 
 
@@ -314,7 +321,7 @@ def evaluate_segments():
         plt.tight_layout()
         plt.show()
 
-        mae, rmse, mape = compute_metrics(y_test, y_pred)
+        mae, rmse, mape, r2 = compute_metrics(y_test, y_pred)
 
         results.append({
             "label": f"xgb_{segment_type}_{segment_value}",
@@ -324,7 +331,8 @@ def evaluate_segments():
             "n_test": len(test_df),
             "mae": mae,
             "rmse": rmse,
-            "mape": mape
+            "mape": mape,
+            "r2": r2
         })
 
     return results
@@ -359,6 +367,7 @@ def main():
             "mae": round(df_segments["mae"].mean(), 4),
             "rmse": round(df_segments["rmse"].mean(), 4),
             "mape": round(df_segments["mape"].mean(), 4),
+            "r2": round(df_segments["r2"].mean(), 4),
         }
 
         results = [global_results[0], segments_global_row] + segment_results
@@ -378,6 +387,7 @@ def main():
                 "mae": round(df_type["mae"].mean(), 4),
                 "rmse": round(df_type["rmse"].mean(), 4),
                 "mape": round(df_type["mape"].mean(), 4),
+                "r2": round(df_type["r2"].mean(), 4),
             }
 
             segment_type_rows.append(row)

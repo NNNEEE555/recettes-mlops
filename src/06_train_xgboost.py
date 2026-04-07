@@ -1,3 +1,4 @@
+# Importation des bibliothèques
 from pathlib import Path
 import joblib
 import numpy as np
@@ -9,12 +10,12 @@ from sklearn.preprocessing import OneHotEncoder
 
 from db_connection import engine
 
-
+# Configuration du projet
 BASE_DIR = Path(__file__).resolve().parents[1]
 MODELS_DIR = BASE_DIR / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
-
+# Définition des variables explicatives
 GLOBAL_FEATURES = [
     "annee",
     "month",
@@ -56,7 +57,7 @@ SEGMENT_CAT_FEATURES = [
     "segment_value",
 ]
 
-
+# Construction du modèle XGBoost
 def build_xgb_model():
     return XGBRegressor(
         objective="reg:squarederror",
@@ -71,7 +72,7 @@ def build_xgb_model():
         random_state=42
     )
 
-# 1. Données globales
+# Chargement des données globales
 def load_global_data():
     query = """
 SELECT 
@@ -98,10 +99,9 @@ ORDER BY date
     df = pd.read_sql(query, engine)
     df["date"] = pd.to_datetime(df["date"])
     df = df.sort_values("date")
-    df = df.dropna(subset=GLOBAL_FEATURES + ["recettes"])
     return df
 
-# 2. Données segmentées
+# Chargement des données segmentées
 def load_segment_tables():
     queries = {
         "secteur": """
@@ -198,28 +198,28 @@ def load_segment_tables():
 
     for segment_type, query in queries.items():
         df = pd.read_sql(query, engine)
+        # Ajout du type de segment
         df["segment_type"] = segment_type
         frames.append(df)
-
+    # Fusion de toutes les tables
     df_all = pd.concat(frames, ignore_index=True)
     df_all["date"] = pd.to_datetime(df_all["date"])
     df_all = df_all.sort_values(["segment_type", "segment_value", "date"])
 
-    df_all = df_all.dropna(subset=SEGMENT_NUM_FEATURES + SEGMENT_CAT_FEATURES + ["recettes"])
     return df_all
 
-# 3. Entraînement global
+# Entraînement du modèle global
 def train_global_model():
     df = load_global_data()
-
+    # Séparation des variables explicatives et de la cible
     X = df[GLOBAL_FEATURES]
-    y = np.log1p(df["recettes"])
-
-    print("Dimensions globales après dropna :", df.shape)
-
+    y = np.log1p(df["recettes"])   # Transformation logarithmique
+    
+    # Entraînement du modèle
     model = build_xgb_model()
     model.fit(X, y)
 
+    # Sauvegarde du modèle
     payload = {
         "model": model,
         "features": GLOBAL_FEATURES,
@@ -229,31 +229,30 @@ def train_global_model():
     joblib.dump(payload, MODELS_DIR / "xgb_global.pkl")
     print("[OK] Modèle global sauvegardé : xgb_global.pkl")
 
-# 4. Entraînement segmenté
+# Entraînement du modèle segmenté
 def train_segment_model():
     df = load_segment_tables()
-
+    # Séparation des variables explicatives et de la cible
     X = df[SEGMENT_NUM_FEATURES + SEGMENT_CAT_FEATURES]
-    y = np.log1p(df["recettes"])
+    y = np.log1p(df["recettes"])  # Transformation logarithmique
 
-    print("Dimensions segmentées après dropna :", df.shape)
-
+     # Prétraitement des variables: encodage des variables catégorielles
     preprocessor = ColumnTransformer(
         transformers=[
             ("cat", OneHotEncoder(handle_unknown="ignore"), SEGMENT_CAT_FEATURES),
             ("num", "passthrough", SEGMENT_NUM_FEATURES),
         ]
     )
-
+    # Construction du pipeline: prétraitement + modèle
     pipeline = Pipeline(
         steps=[
             ("preprocessor", preprocessor),
             ("model", build_xgb_model())
         ]
     )
-
+    # Entraînement du modèle
     pipeline.fit(X, y)
-
+    # Sauvegarde du pipeline complet
     payload = {
         "pipeline": pipeline,
         "num_features": SEGMENT_NUM_FEATURES,
@@ -264,7 +263,7 @@ def train_segment_model():
     joblib.dump(payload, MODELS_DIR / "xgb_segment.pkl")
     print("[OK] Modèle segmenté sauvegardé : xgb_segment.pkl")
 
-
+# Exécution du pipeline
 def main():
     print("\n=== ENTRAINEMENT XGBOOST ===\n")
 
@@ -279,3 +278,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

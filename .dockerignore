@@ -1,0 +1,13 @@
+__pycache__/
+.venv/
+.env
+.git/
+outputs/
+data/
+
+
+
+
+
+
+

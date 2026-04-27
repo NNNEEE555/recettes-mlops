@@ -1,6 +1,7 @@
 from pathlib import Path
 import joblib
 import pandas as pd
+import numpy as np
 
 from db_connection import engine
 
@@ -19,8 +20,16 @@ GLOBAL_FEATURES = [
     "trimestre",
     "lag_1",
     "lag_3",
+    "lag_6",
     "moyenne_mobile",
     "transactions",
+    "transactions_lag_1",
+    "transactions_lag_3",
+    "transactions_rolling_3",
+    "transactions_diff",
+    "month_sin",
+    "month_cos",
+    "trend",
 ]
 
 SEGMENT_NUM_FEATURES = [
@@ -29,8 +38,16 @@ SEGMENT_NUM_FEATURES = [
     "trimestre",
     "lag_1",
     "lag_3",
+    "lag_6",
     "moyenne_mobile",
     "transactions",
+    "transactions_lag_1",
+    "transactions_lag_3",
+    "transactions_rolling_3",
+    "transactions_diff",
+    "month_sin",
+    "month_cos",
+    "trend",
 ]
 
 SEGMENT_CAT_FEATURES = [
@@ -43,16 +60,45 @@ def save_outputs(df: pd.DataFrame, base_filename: str):
     csv_path = OUTPUTS_DIR / f"{base_filename}.csv"
     xlsx_path = OUTPUTS_DIR / f"{base_filename}.xlsx"
 
+    # Sauvegarde fichiers
     df.to_csv(csv_path, index=False, encoding="utf-8-sig")
     df.to_excel(xlsx_path, index=False)
 
+    # Sauvegarde PostgreSQL
+    table_name = base_filename.lower()
+    df.to_sql(
+        table_name,
+        engine,
+        schema="public",
+        if_exists="replace",
+        index=False
+    )
+
     print(f"[OK] Sauvegardé : {csv_path}")
     print(f"[OK] Sauvegardé : {xlsx_path}")
+    print(f"[OK] Table PostgreSQL créée : public.{table_name}")
 
 
 def load_global_history():
     query = """
-        SELECT annee, month, trimestre, lag_1, lag_3, moyenne_mobile, transactions, recettes, date
+        SELECT 
+            annee,
+            month,
+            trimestre,
+            lag_1,
+            lag_3,
+            lag_6,
+            moyenne_mobile,
+            transactions,
+            transactions_lag_1,
+            transactions_lag_3,
+            transactions_rolling_3,
+            transactions_diff,
+            month_sin,
+            month_cos,
+            trend,
+            recettes,
+            date
         FROM recettes_mensuelles
         ORDER BY date
     """
@@ -64,24 +110,97 @@ def load_global_history():
 def load_segment_tables():
     queries = {
         "secteur": """
-            SELECT secteur AS segment_value, annee, month, recettes, transactions, date
+            SELECT 
+                secteur AS segment_value,
+                annee,
+                month,
+                trimestre,
+                lag_1,
+                lag_3,
+                lag_6,
+                moyenne_mobile,
+                transactions,
+                transactions_lag_1,
+                transactions_lag_3,
+                transactions_rolling_3,
+                transactions_diff,
+                month_sin,
+                month_cos,
+                trend,
+                recettes,
+                date
             FROM recettes_secteur
         """,
         "produit": """
-            SELECT produit AS segment_value, annee, month, recettes, transactions, date
+            SELECT 
+                produit AS segment_value,
+                annee,
+                month,
+                trimestre,
+                lag_1,
+                lag_3,
+                lag_6,
+                moyenne_mobile,
+                transactions,
+                transactions_lag_1,
+                transactions_lag_3,
+                transactions_rolling_3,
+                transactions_diff,
+                month_sin,
+                month_cos,
+                trend,
+                recettes,
+                date
             FROM recettes_produit
         """,
         "antenne": """
-            SELECT antenne AS segment_value, annee, month, recettes, transactions, date
+            SELECT 
+                antenne AS segment_value,
+                annee,
+                month,
+                trimestre,
+                lag_1,
+                lag_3,
+                lag_6,
+                moyenne_mobile,
+                transactions,
+                transactions_lag_1,
+                transactions_lag_3,
+                transactions_rolling_3,
+                transactions_diff,
+                month_sin,
+                month_cos,
+                trend,
+                recettes,
+                date
             FROM recettes_antenne
         """,
         "adherent": """
-            SELECT personne_physique AS segment_value, annee, month, recettes, transactions, date
+            SELECT 
+                personne_physique AS segment_value,
+                annee,
+                month,
+                trimestre,
+                lag_1,
+                lag_3,
+                lag_6,
+                moyenne_mobile,
+                transactions,
+                transactions_lag_1,
+                transactions_lag_3,
+                transactions_rolling_3,
+                transactions_diff,
+                month_sin,
+                month_cos,
+                trend,
+                recettes,
+                date
             FROM recettes_adherent
         """
     }
 
     frames = []
+
     for segment_type, query in queries.items():
         df = pd.read_sql(query, engine)
         df["segment_type"] = segment_type
@@ -90,24 +209,43 @@ def load_segment_tables():
     df_all = pd.concat(frames, ignore_index=True)
     df_all["date"] = pd.to_datetime(df_all["date"])
     df_all = df_all.sort_values(["segment_type", "segment_value", "date"]).reset_index(drop=True)
+
     return df_all
 
 
 def forecast_global():
     payload = joblib.load(MODELS_DIR / "xgb_global.pkl")
     model = payload["model"]
+    target_transform = payload.get("target_transform", None)
 
     history = load_global_history().copy()
     forecasts = []
 
-    for _ in range(FORECAST_MONTHS):
+    for step in range(FORECAST_MONTHS):
         last_date = history["date"].iloc[-1]
-        next_date = last_date + pd.offsets.MonthEnd(1)
+        next_date = (last_date + pd.offsets.MonthEnd(1))
 
         lag_1 = history["recettes"].iloc[-1]
         lag_3 = history["recettes"].iloc[-3] if len(history) >= 3 else lag_1
-        moyenne_mobile = history["recettes"].tail(3).mean()
-        transactions = history["transactions"].tail(3).mean()
+        lag_6 = history["recettes"].iloc[-6] if len(history) >= 6 else lag_1
+
+        moyenne_mobile = history["recettes"].shift(1).tail(3).mean()
+        if pd.isna(moyenne_mobile):
+            moyenne_mobile = history["recettes"].tail(3).mean()
+
+        transactions = history["transactions"].iloc[-1]
+        transactions_lag_1 = history["transactions"].iloc[-1]
+        transactions_lag_3 = history["transactions"].iloc[-3] if len(history) >= 3 else transactions
+
+        transactions_rolling_3 = history["transactions"].shift(1).tail(3).mean()
+        if pd.isna(transactions_rolling_3):
+            transactions_rolling_3 = history["transactions"].tail(3).mean()
+
+        transactions_diff = transactions - transactions_lag_1
+
+        month_sin = np.sin(2 * np.pi * next_date.month / 12)
+        month_cos = np.cos(2 * np.pi * next_date.month / 12)
+        trend = len(history)
 
         row = pd.DataFrame([{
             "annee": next_date.year,
@@ -115,11 +253,22 @@ def forecast_global():
             "trimestre": ((next_date.month - 1) // 3) + 1,
             "lag_1": lag_1,
             "lag_3": lag_3,
+            "lag_6": lag_6,
             "moyenne_mobile": moyenne_mobile,
-            "transactions": transactions
+            "transactions": transactions,
+            "transactions_lag_1": transactions_lag_1,
+            "transactions_lag_3": transactions_lag_3,
+            "transactions_rolling_3": transactions_rolling_3,
+            "transactions_diff": transactions_diff,
+            "month_sin": month_sin,
+            "month_cos": month_cos,
+            "trend": trend
         }])
 
-        pred = float(model.predict(row)[0])
+        pred = float(model.predict(row[GLOBAL_FEATURES])[0])
+
+        if target_transform == "log1p":
+            pred = float(np.expm1(pred))
 
         forecasts.append({
             "date": next_date,
@@ -129,15 +278,23 @@ def forecast_global():
         history = pd.concat([
             history,
             pd.DataFrame([{
+                "date": next_date,
                 "annee": next_date.year,
                 "month": next_date.month,
                 "trimestre": ((next_date.month - 1) // 3) + 1,
                 "lag_1": lag_1,
                 "lag_3": lag_3,
+                "lag_6": lag_6,
                 "moyenne_mobile": moyenne_mobile,
                 "transactions": transactions,
-                "recettes": pred,
-                "date": next_date
+                "transactions_lag_1": transactions_lag_1,
+                "transactions_lag_3": transactions_lag_3,
+                "transactions_rolling_3": transactions_rolling_3,
+                "transactions_diff": transactions_diff,
+                "month_sin": month_sin,
+                "month_cos": month_cos,
+                "trend": trend,
+                "recettes": pred
             }])
         ], ignore_index=True)
 
@@ -153,6 +310,7 @@ def forecast_global():
 def forecast_segments():
     payload = joblib.load(MODELS_DIR / "xgb_segment.pkl")
     pipeline = payload["pipeline"]
+    target_transform = payload.get("target_transform", None)
 
     df = load_segment_tables()
     forecasts = []
@@ -164,16 +322,32 @@ def forecast_segments():
             continue
 
         local_history = group.copy()
-        local_history["trimestre"] = ((local_history["month"] - 1) // 3) + 1
 
-        for _ in range(FORECAST_MONTHS):
+        for step in range(FORECAST_MONTHS):
             last_date = local_history["date"].iloc[-1]
-            next_date = last_date + pd.offsets.MonthEnd(1)
+            next_date = (last_date + pd.offsets.MonthEnd(1))
 
             lag_1 = local_history["recettes"].iloc[-1]
             lag_3 = local_history["recettes"].iloc[-3] if len(local_history) >= 3 else lag_1
-            moyenne_mobile = local_history["recettes"].tail(3).mean()
-            transactions = local_history["transactions"].tail(3).mean()
+            lag_6 = local_history["recettes"].iloc[-6] if len(local_history) >= 6 else lag_1
+
+            moyenne_mobile = local_history["recettes"].shift(1).tail(3).mean()
+            if pd.isna(moyenne_mobile):
+                moyenne_mobile = local_history["recettes"].tail(3).mean()
+
+            transactions = local_history["transactions"].iloc[-1]
+            transactions_lag_1 = local_history["transactions"].iloc[-1]
+            transactions_lag_3 = local_history["transactions"].iloc[-3] if len(local_history) >= 3 else transactions
+
+            transactions_rolling_3 = local_history["transactions"].shift(1).tail(3).mean()
+            if pd.isna(transactions_rolling_3):
+                transactions_rolling_3 = local_history["transactions"].tail(3).mean()
+
+            transactions_diff = transactions - transactions_lag_1
+
+            month_sin = np.sin(2 * np.pi * next_date.month / 12)
+            month_cos = np.cos(2 * np.pi * next_date.month / 12)
+            trend = len(local_history)
 
             row = pd.DataFrame([{
                 "segment_type": segment_type,
@@ -183,11 +357,22 @@ def forecast_segments():
                 "trimestre": ((next_date.month - 1) // 3) + 1,
                 "lag_1": lag_1,
                 "lag_3": lag_3,
+                "lag_6": lag_6,
                 "moyenne_mobile": moyenne_mobile,
-                "transactions": transactions
+                "transactions": transactions,
+                "transactions_lag_1": transactions_lag_1,
+                "transactions_lag_3": transactions_lag_3,
+                "transactions_rolling_3": transactions_rolling_3,
+                "transactions_diff": transactions_diff,
+                "month_sin": month_sin,
+                "month_cos": month_cos,
+                "trend": trend
             }])
 
-            pred = float(pipeline.predict(row)[0])
+            pred = float(pipeline.predict(row[SEGMENT_NUM_FEATURES + SEGMENT_CAT_FEATURES])[0])
+
+            if target_transform == "log1p":
+                pred = float(np.expm1(pred))
 
             forecasts.append({
                 "segment_type": segment_type,
@@ -201,12 +386,23 @@ def forecast_segments():
                 pd.DataFrame([{
                     "segment_type": segment_type,
                     "segment_value": segment_value,
+                    "date": next_date,
                     "annee": next_date.year,
                     "month": next_date.month,
                     "trimestre": ((next_date.month - 1) // 3) + 1,
+                    "lag_1": lag_1,
+                    "lag_3": lag_3,
+                    "lag_6": lag_6,
+                    "moyenne_mobile": moyenne_mobile,
                     "transactions": transactions,
-                    "recettes": pred,
-                    "date": next_date
+                    "transactions_lag_1": transactions_lag_1,
+                    "transactions_lag_3": transactions_lag_3,
+                    "transactions_rolling_3": transactions_rolling_3,
+                    "transactions_diff": transactions_diff,
+                    "month_sin": month_sin,
+                    "month_cos": month_cos,
+                    "trend": trend,
+                    "recettes": pred
                 }])
             ], ignore_index=True)
 

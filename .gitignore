@@ -1,0 +1,17 @@
+# Environnement
+.env
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Données sensibles
+data/raw/
+
+# DVC cache
+.dvc/cache/
+
+# OS
+.DS_Store
+Thumbs.db

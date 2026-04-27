@@ -15,19 +15,22 @@ df["moy_paiment"] = df["moy_paiment"].replace({
 
 # 2️: Correction colonne produit
 
-  # normaliser texte
+  # normaliser le texte
 df["produit"] = df["produit"].astype(str).str.strip()
 
-  # certificat d'origine
-df.loc[
-    df["produit"].str.contains("certificat", case=False, na=False),
-    "produit"
-] = "Certificat d'origine"
+# remettre les "nan" texte en vraie valeur manquante
+df["produit"] = df["produit"].replace(["", "nan", "None"], pd.NA)
 
-df.loc[
-    (df["produit"].isna()) | (df["produit"] == "") | (df["produit"] == "None"),
-    "produit"
-] = "Certificat d'origine"
+# unifier les variantes de certificat d'origine
+mask_certif_origine = (
+    df["produit"].str.contains("certificat", case=False, na=False)
+    & df["produit"].str.contains("origine", case=False, na=False)
+)
+
+df.loc[mask_certif_origine, "produit"] = "Certificat d'origine"
+
+# remplir les cases vides par Certificat d'origine
+df["produit"] = df["produit"].fillna("Certificat d'origine")
 
   # location de salles
 df.loc[

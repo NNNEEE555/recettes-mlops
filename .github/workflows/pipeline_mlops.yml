@@ -1,0 +1,45 @@
+name: MLOps Pipeline
+
+on:
+  workflow_dispatch:
+
+jobs:
+  mlops-pipeline:
+    runs-on: ubuntu-latest
+
+    env:
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_SSLMODE: require
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run data cleaning
+        run: python src/02_clean_data.py
+
+      - name: Run feature engineering
+        run: python src/05_feature_engineering.py
+
+      - name: Train XGBoost model
+        run: python src/06_train_xgboost.py
+
+      - name: Evaluate XGBoost model
+        run: python src/07_evaluate_xgboost.py
+
+      - name: Generate forecasts
+        run: python src/08_generate_forecasts.py

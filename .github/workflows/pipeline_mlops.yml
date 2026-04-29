@@ -33,7 +33,7 @@ jobs:
         run: python src/02_clean_data.py
 
       - name: Run feature engineering
-        run: python src/05_feature_engineering.py
+        run: python src/04_feature_engineering.py
 
       - name: Train XGBoost model
         run: python src/06_train_xgboost.py

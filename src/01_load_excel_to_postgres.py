@@ -1,8 +1,10 @@
 import pandas as pd
+from pathlib import Path
 from db_connection import engine
 
 # 1) Chemin vers le fichier Excel versionné par DVC
-EXCEL_PATH = r"data/raw/ccistta_data_unlocked.xlsx"
+BASE_DIR = Path(__file__).resolve().parent.parent
+EXCEL_PATH = BASE_DIR / "data" / "raw" / "ccistta_data_unlocked.xlsx"
 
 # 2) Lire l'Excel
 df = pd.read_excel(EXCEL_PATH, engine="openpyxl")

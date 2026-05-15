@@ -1,7 +1,11 @@
 import os
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from db_connection import engine
+
+OUTPUT_DIR = Path("/tmp/airflow_outputs")
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Fonctions de feature engineering
 def add_time_features(df, date_col="date", month_col="month"):
@@ -107,7 +111,7 @@ df_excel = df.copy()
 df_excel["date"] = df_excel["date"].dt.date
 
 df_excel.to_excel(
-    "data/processed/recettes_features.xlsx",
+    OUTPUT_DIR / "recettes_features.xlsx",
     index=False
 )
 
@@ -158,7 +162,7 @@ recettes_mensuelles_excel = recettes_mensuelles.copy()
 recettes_mensuelles_excel["date"] = recettes_mensuelles_excel["date"].dt.date
 
 recettes_mensuelles_excel.to_excel(
-    "data/processed/recettes_mensuelles.xlsx",
+    OUTPUT_DIR / "recettes_mensuelles.xlsx",
     index=False
 )
 
@@ -204,7 +208,7 @@ recettes_produit_excel = recettes_produit.copy()
 recettes_produit_excel["date"] = recettes_produit_excel["date"].dt.date
 
 recettes_produit_excel.to_excel(
-    "data/processed/recettes_produit.xlsx",
+    OUTPUT_DIR / "recettes_produit.xlsx",
     index=False
 )
 
@@ -250,7 +254,7 @@ recettes_secteur_excel = recettes_secteur.copy()
 recettes_secteur_excel["date"] = recettes_secteur_excel["date"].dt.date
 
 recettes_secteur_excel.to_excel(
-    "data/processed/recettes_secteur.xlsx",
+    OUTPUT_DIR / "recettes_secteur.xlsx",
     index=False
 )
 
@@ -296,7 +300,7 @@ recettes_antenne_excel = recettes_antenne.copy()
 recettes_antenne_excel["date"] = recettes_antenne_excel["date"].dt.date
 
 recettes_antenne_excel.to_excel(
-    "data/processed/recettes_antenne.xlsx",
+    OUTPUT_DIR / "recettes_antenne.xlsx",
     index=False
 )
 
@@ -342,7 +346,7 @@ recettes_adherent_excel = recettes_adherent.copy()
 recettes_adherent_excel["date"] = recettes_adherent_excel["date"].dt.date
 
 recettes_adherent_excel.to_excel(
-    "data/processed/recettes_adherent.xlsx",
+    OUTPUT_DIR / "recettes_adherent.xlsx",
     index=False
 )
 

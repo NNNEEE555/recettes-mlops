@@ -1,4 +1,5 @@
 import pandas as pd
+from pathlib import Path
 from sqlalchemy import create_engine
 
 # connexion PostgreSQL
@@ -111,9 +112,16 @@ df.to_sql(
     if_exists="replace",
     index=False
 )
+# créer automatiquement le dossier processed
+OUTPUT_DIR = Path("/tmp/airflow_outputs")
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+# chemin du fichier exporté
+output_file = OUTPUT_DIR / "recettes_clean.xlsx"
+
 # exporter dataset propre
 df.to_excel(
-    "data/processed/recettes_clean.xlsx",
+    output_file,
     index=False
 )
 

@@ -5,6 +5,16 @@ from fastapi import FastAPI, HTTPException
 from src.db_connection import engine
 from api.schemas import GlobalForecastInput, SegmentForecastInput
 from api.model_loader import global_model, segment_model
+def read_sql_safe(query: str, params=None):
+    try:
+        with engine.connect() as conn:
+            return pd.read_sql(query, conn, params=params)
+    except Exception as e:
+        engine.dispose()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur base de données : {str(e)}"
+        )
 
 app = FastAPI(
     title="API de prévision des recettes",
@@ -70,7 +80,7 @@ def load_global_history() -> pd.DataFrame:
         FROM recettes_mensuelles
         ORDER BY date
     """
-    df = pd.read_sql(query, engine)
+    df = read_sql_safe(query)
     df["date"] = pd.to_datetime(df["date"])
     return df.sort_values("date").reset_index(drop=True)
 
@@ -110,7 +120,10 @@ def load_segment_history(segment_type: str, segment_value: str) -> pd.DataFrame:
             detail="segment_type doit être : secteur, produit, antenne ou adherent"
         )
 
-    df = pd.read_sql(query, engine, params={"segment_value": segment_value})
+    df = read_sql_safe(
+    query,
+    params={"segment_value": segment_value}
+)
     if df.empty:
         raise HTTPException(
             status_code=404,

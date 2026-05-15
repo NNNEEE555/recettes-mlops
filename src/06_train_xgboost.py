@@ -11,8 +11,7 @@ from sklearn.preprocessing import OneHotEncoder
 from db_connection import engine
 
 # Configuration du projet
-BASE_DIR = Path(__file__).resolve().parents[1]
-MODELS_DIR = BASE_DIR / "models"
+MODELS_DIR = Path("/tmp/airflow_models")
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Définition des variables explicatives

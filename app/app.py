@@ -1,9 +1,10 @@
 import requests
 import streamlit as st
 import pandas as pd
+from pathlib import Path
 
 API_URL = "https://recettes-mlops-production.up.railway.app"
-
+LOGO_PATH = Path(__file__).parent / "logo_ccistta.png"
 st.set_page_config(
     page_title="Prévision des recettes CCISTTA",
     page_icon="📊",
@@ -79,7 +80,7 @@ st.markdown("""
 # SIDEBAR
 # =========================
 with st.sidebar:
-    st.image("logo_ccistta.png", width=120)
+    st.image(str(LOGO_PATH), width=120)
     st.markdown("### CCISTTA")
     st.caption("Solution MLOps de prévision des recettes")
 
@@ -101,7 +102,7 @@ with st.sidebar:
 col_logo, col_title = st.columns([1, 6])
 
 with col_logo:
-    st.image("logo_ccistta.png", width=90)
+    st.image(str(LOGO_PATH), width=90)
 
 with col_title:
     st.title("Solution MLOps de Prévision des Recettes")

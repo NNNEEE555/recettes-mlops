@@ -1,9 +1,8 @@
 import requests
 import streamlit as st
-
+import pandas as pd
 
 API_URL = "https://recettes-mlops-production.up.railway.app"
-
 
 st.set_page_config(
     page_title="Prévision des recettes CCISTTA",
@@ -11,84 +10,172 @@ st.set_page_config(
     layout="wide"
 )
 
-
-st.title("📊 Solution MLOps de Prévision des Recettes CCISTTA")
-
+# =========================
+# THEME CCISTTA
+# =========================
 st.markdown("""
-Cette interface permet d'utiliser le modèle de prévision des recettes sans passer par Swagger.
-Elle communique avec l'API FastAPI déployée sur Railway.
-""")
+<style>
+    .stApp {
+        background-color: #F7F9FC;
+    }
+
+    section[data-testid="stSidebar"] {
+        background-color: #FFFFFF;
+        border-right: 1px solid #E5E7EB;
+    }
+
+    h1, h2, h3 {
+        color: #0B4F8A;
+        font-family: Arial, sans-serif;
+    }
+
+    .main-card {
+        background-color: white;
+        padding: 25px;
+        border-radius: 14px;
+        border-left: 6px solid #0B4F8A;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.06);
+        margin-bottom: 20px;
+    }
+
+    .kpi-card {
+        background-color: white;
+        padding: 20px;
+        border-radius: 14px;
+        text-align: center;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.06);
+        border-top: 4px solid #008C45;
+    }
+
+    .kpi-title {
+        font-size: 15px;
+        color: #555;
+    }
+
+    .kpi-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #0B4F8A;
+    }
+
+    .stButton>button {
+        background-color: #0B4F8A;
+        color: white;
+        border-radius: 8px;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        font-weight: 600;
+    }
+
+    .stButton>button:hover {
+        background-color: #008C45;
+        color: white;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 
 # =========================
-# Sidebar
+# SIDEBAR
 # =========================
-st.sidebar.title("Navigation")
+with st.sidebar:
+    st.image("logo_ccistta.png", width=120)
+    st.markdown("### CCISTTA")
+    st.caption("Solution MLOps de prévision des recettes")
 
-page = st.sidebar.radio(
-    "Choisir une page",
-    [
-        "Accueil",
-        "Prévision globale",
-        "Prévision par segment",
-        "Informations techniques"
-    ]
-)
+    page = st.radio(
+        "Navigation",
+        [
+            "Accueil",
+            "Prévision globale",
+            "Prévision par segment",
+            "Visualisation générale",
+            "Informations techniques"
+        ]
+    )
 
 
 # =========================
-# Page Accueil
+# HEADER
+# =========================
+col_logo, col_title = st.columns([1, 6])
+
+with col_logo:
+    st.image("logo_ccistta.png", width=90)
+
+with col_title:
+    st.title("Solution MLOps de Prévision des Recettes")
+    st.markdown("### Chambre de Commerce, d’Industrie et de Services Tanger-Tétouan-Al Hoceima")
+
+
+# =========================
+# PAGE ACCUEIL
 # =========================
 if page == "Accueil":
-    st.header("🏠 Accueil")
+    st.markdown("""
+    <div class="main-card">
+        <h3>Objectif de la solution</h3>
+        <p>
+        Cette application permet d'exploiter un modèle de prévision des recettes à travers
+        une interface simple, accessible et professionnelle. Elle communique avec une API
+        FastAPI déployée sur Railway afin de générer des prévisions globales ou segmentées.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric("Modèle", "XGBoost")
+        st.markdown("""
+        <div class="kpi-card">
+            <div class="kpi-title">Modèle</div>
+            <div class="kpi-value">XGBoost</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     with col2:
-        st.metric("API", "FastAPI")
+        st.markdown("""
+        <div class="kpi-card">
+            <div class="kpi-title">API</div>
+            <div class="kpi-value">FastAPI</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     with col3:
-        st.metric("Déploiement", "Railway")
+        st.markdown("""
+        <div class="kpi-card">
+            <div class="kpi-title">Déploiement</div>
+            <div class="kpi-value">Cloud</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.subheader("🎯 Objectif")
-    st.write("""
-    Cette solution permet d'automatiser la prévision des recettes de la CCISTTA
-    à partir d'un pipeline MLOps intégrant nettoyage, feature engineering,
-    modélisation, API, orchestration et déploiement cloud.
-    """)
-
-    st.subheader("🔎 Vérification de l'API")
+    st.subheader("Vérification de l’API")
 
     if st.button("Tester la connexion API"):
         try:
             response = requests.get(f"{API_URL}/health", timeout=10)
 
             if response.status_code == 200:
-                st.success("✅ API disponible et fonctionnelle")
+                st.success("API disponible et fonctionnelle")
                 st.json(response.json())
             else:
-                st.error(f"❌ API non disponible : {response.status_code}")
+                st.error(f"API non disponible : {response.status_code}")
 
         except Exception as e:
             st.error(f"Erreur de connexion à l'API : {e}")
 
-    st.subheader("🔗 Liens utiles")
-    st.markdown(f"- [Swagger API]({API_URL}/docs)")
-    st.markdown("- Dashboard Power BI : à intégrer ou ouvrir séparément")
-
 
 # =========================
-# Page Prévision globale
+# PAGE PREVISION GLOBALE
 # =========================
 elif page == "Prévision globale":
-    st.header("📈 Prévision globale des recettes")
+    st.header("Prévision globale des recettes")
 
-    st.write("""
-    Cette page permet de générer une prévision globale des recettes pour une période future.
-    """)
+    st.markdown("""
+    <div class="main-card">
+        Cette page permet de générer une prévision globale des recettes pour une période future.
+    </div>
+    """, unsafe_allow_html=True)
 
     date_cible = st.text_input(
         "Date cible",
@@ -97,9 +184,7 @@ elif page == "Prévision globale":
     )
 
     if st.button("Générer la prévision globale"):
-        payload = {
-            "date": date_cible
-        }
+        payload = {"date": date_cible}
 
         try:
             response = requests.post(
@@ -110,10 +195,9 @@ elif page == "Prévision globale":
 
             if response.status_code == 200:
                 result = response.json()
-
                 prediction = result.get("prediction_recettes")
 
-                st.success("✅ Prévision générée avec succès")
+                st.success("Prévision générée avec succès")
 
                 st.metric(
                     label=f"Recettes prévues pour {date_cible}",
@@ -132,15 +216,17 @@ elif page == "Prévision globale":
 
 
 # =========================
-# Page Prévision par segment
+# PAGE PREVISION SEGMENT
 # =========================
 elif page == "Prévision par segment":
-    st.header("🧩 Prévision par segment")
+    st.header("Prévision par segment")
 
-    st.write("""
-    Cette page permet de générer une prévision selon un segment :
-    secteur, produit, antenne ou type d'adhérent.
-    """)
+    st.markdown("""
+    <div class="main-card">
+        Cette page permet de générer une prévision selon un segment :
+        secteur, produit, antenne ou type d'adhérent.
+    </div>
+    """, unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
 
@@ -158,12 +244,7 @@ elif page == "Prévision par segment":
         )
 
     valeurs_par_segment = {
-        "secteur": [
-            "Commerce",
-            "Industrie",
-            "Service",
-            "Hors secteur"
-        ],
+        "secteur": ["Commerce", "Industrie", "Service", "Hors secteur"],
         "produit": [
             "Attestation Professionnelle",
             "Carte de Commerce",
@@ -172,17 +253,8 @@ elif page == "Prévision par segment":
             "Légalisation",
             "Location de salles"
         ],
-        "antenne": [
-            "Tanger",
-            "Tétouan",
-            "Larache",
-            "Al Hoceima"
-        ],
-        "adherent": [
-            "Particulier",
-            "PM",
-            "PP"
-        ]
+        "antenne": ["Tanger", "Tétouan", "Larache", "Al Hoceima"],
+        "adherent": ["Particulier", "PM", "PP"]
     }
 
     segment_value = st.selectbox(
@@ -206,10 +278,9 @@ elif page == "Prévision par segment":
 
             if response.status_code == 200:
                 result = response.json()
-
                 prediction = result.get("prediction_recettes")
 
-                st.success("✅ Prévision segmentée générée avec succès")
+                st.success("Prévision segmentée générée avec succès")
 
                 st.metric(
                     label=f"{segment_type} - {segment_value}",
@@ -228,12 +299,52 @@ elif page == "Prévision par segment":
 
 
 # =========================
-# Page Informations techniques
+# PAGE VISUALISATION GENERALE
+# =========================
+elif page == "Visualisation générale":
+    st.header("Visualisation générale")
+
+    st.markdown("""
+    <div class="main-card">
+        Cette partie présente une vue générale et synthétique des recettes.
+        Elle sert à donner une lecture rapide de l’évolution, sans entrer dans une analyse détaillée.
+    </div>
+    """, unsafe_allow_html=True)
+
+    data = pd.DataFrame({
+        "Mois": ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin"],
+        "Recettes": [120000, 135000, 128000, 150000, 162000, 158000],
+        "Transactions": [320, 350, 330, 390, 410, 400]
+    })
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric("Recettes moyennes", "142 166 DH")
+
+    with col2:
+        st.metric("Transactions moyennes", "366")
+
+    with col3:
+        st.metric("Tendance", "Positive")
+
+    st.subheader("Évolution générale des recettes")
+    st.line_chart(data.set_index("Mois")["Recettes"])
+
+    st.subheader("Vue générale des transactions")
+    st.bar_chart(data.set_index("Mois")["Transactions"])
+
+    st.info("Cette visualisation est indicative. Elle peut être remplacée plus tard par des données réelles issues de PostgreSQL ou de l’API.")
+
+
+# =========================
+# PAGE INFORMATIONS TECHNIQUES
 # =========================
 elif page == "Informations techniques":
-    st.header("⚙️ Informations techniques")
+    st.header("Informations techniques")
 
-    st.subheader("Architecture")
+    st.subheader("Architecture générale")
+
     st.code("""
 Excel / PostgreSQL / Neon
         ↓
@@ -245,7 +356,7 @@ XGBoost
         ↓
 FastAPI Railway
         ↓
-Streamlit App
+Streamlit Cloud
         ↓
 Utilisateur métier
     """)
@@ -271,5 +382,6 @@ Utilisateur métier
 - Docker
 - Railway
 - Airflow
-- Power BI
+- GitHub
+- Streamlit Cloud
 """)

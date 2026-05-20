@@ -2,6 +2,7 @@ import requests
 import streamlit as st
 import pandas as pd
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 API_URL = "https://recettes-mlops-production.up.railway.app"
 LOGO_PATH = Path(__file__).parent / "logo_ccistta.png"
@@ -330,10 +331,20 @@ elif page == "Visualisation générale":
         st.metric("Tendance", "Positive")
 
     st.subheader("Évolution générale des recettes")
-    st.line_chart(data.set_index("Mois")["Recettes"])
+    fig, ax = plt.subplots()
+    ax.plot(data["Mois"], data["Recettes"], marker="o")
+    ax.set_xlabel("Mois")
+    ax.set_ylabel("Recettes")
+    ax.set_title("Évolution générale des recettes")
+    st.pyplot(fig)
 
     st.subheader("Vue générale des transactions")
-    st.bar_chart(data.set_index("Mois")["Transactions"])
+    fig, ax = plt.subplots()
+    ax.bar(data["Mois"], data["Transactions"])
+    ax.set_xlabel("Mois")
+    ax.set_ylabel("Transactions")
+    ax.set_title("Vue générale des transactions")
+    st.pyplot(fig)
 
     st.info("Cette visualisation est indicative. Elle peut être remplacée plus tard par des données réelles issues de PostgreSQL ou de l’API.")
 

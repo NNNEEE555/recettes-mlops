@@ -1,5 +1,6 @@
 import math
 import pandas as pd
+import numpy as np
 from fastapi import FastAPI, HTTPException
 
 from src.db_connection import engine
@@ -245,7 +246,8 @@ def predict_global_auto(payload: GlobalForecastInput):
         next_date = local_history["date"].max() + pd.offsets.MonthBegin(1)
 
         row = build_global_features(local_history, next_date)
-        pred = float(global_model.predict(row)[0])
+        pred_log = float(global_model.predict(row)[0])
+        pred = float(np.expm1(pred_log))
 
         new_row = row.copy()
         new_row["recettes"] = pred
@@ -286,7 +288,8 @@ def predict_segment_auto(payload: SegmentForecastInput):
             payload.segment_value
         )
 
-        pred = float(segment_model.predict(row)[0])
+        pred_log = float(segment_model.predict(row)[0])
+        pred = float(np.expm1(pred_log))
 
         new_row = pd.DataFrame([{
             "segment_value": payload.segment_value,

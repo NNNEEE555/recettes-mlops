@@ -319,3 +319,12 @@ def predict_segment_auto(payload: SegmentForecastInput):
 @app.get("/")
 def root():
     return {"message": "API Recettes fonctionne"}
+
+
+
+@app.get("/version")
+def version():
+    return {
+        "version": "inverse_log_fixed_v2",
+        "message": "API avec np.expm1 active"
+    }

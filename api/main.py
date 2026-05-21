@@ -248,6 +248,8 @@ def predict_global_auto(payload: GlobalForecastInput):
         row = build_global_features(local_history, next_date)
         pred_log = float(global_model.predict(row)[0])
         pred = float(np.expm1(pred_log))
+        print("GLOBAL PRED RAW =", pred_log)
+        print("GLOBAL PRED FINAL =", pred)
 
         new_row = row.copy()
         new_row["recettes"] = pred
@@ -290,6 +292,8 @@ def predict_segment_auto(payload: SegmentForecastInput):
 
         pred_log = float(segment_model.predict(row)[0])
         pred = float(np.expm1(pred_log))
+        print("SEGMENT PRED RAW =", pred_log)
+        print("SEGMENT PRED FINAL =", pred)
 
         new_row = pd.DataFrame([{
             "segment_value": payload.segment_value,

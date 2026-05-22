@@ -5,7 +5,10 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 API_URL = "https://recettes-mlops-production.up.railway.app"
+BASE_DIR = Path(__file__).resolve().parent
 LOGO_PATH = Path(__file__).parent / "logo_ccistta.png"
+RECETTES_MENSUELLES_PATH = BASE_DIR / "data" / "recettes_mensuelles.xlsx"
+RECETTES_FEATURES_PATH = BASE_DIR / "data" / "recettes_features.xlsx"
 st.set_page_config(
     page_title="Prévision des recettes CCISTTA",
     page_icon="📊",
@@ -284,89 +287,95 @@ elif page == "Visualisation générale":
     st.markdown("""
     <div class="main-card">
         Cette page présente une vue synthétique des recettes et des transactions.
-        L'utilisateur peut filtrer les indicateurs et les graphiques par année.
+        Les indicateurs sont calculés automatiquement à partir des données mensuelles réelles.
     </div>
     """, unsafe_allow_html=True)
 
-    data = pd.DataFrame({
-        "Année": [2024]*12 + [2025]*12 + [2026]*12,
-        "Mois": [
-            "Jan", "Fév", "Mar", "Avr", "Mai", "Juin",
-            "Juil", "Août", "Sep", "Oct", "Nov", "Déc"
-        ] * 3,
-        "Recettes": [
-            95000, 102000, 98000, 110000, 115000, 108000,
-            120000, 118000, 125000, 130000, 127000, 135000,
+    try:
+        data = pd.read_excel(RECETTES_MENSUELLES_PATH)
 
-            138000, 142000, 136000, 148000, 152000, 150000,
-            158000, 160000, 155000, 165000, 170000, 168000,
+        data["date"] = pd.to_datetime(data["date"])
+        data["annee"] = data["date"].dt.year
+        data["month"] = data["date"].dt.month
 
-            120583, 130000, 128000, 136000, 142000, 145000,
-            150000, 152000, 158000, 160000, 166000, 170000
-        ],
-        "Transactions": [
-            280, 300, 295, 320, 335, 310,
-            345, 340, 355, 370, 365, 390,
+        mois_noms = {
+            1: "Jan", 2: "Fév", 3: "Mar", 4: "Avr",
+            5: "Mai", 6: "Juin", 7: "Juil", 8: "Août",
+            9: "Sep", 10: "Oct", 11: "Nov", 12: "Déc"
+        }
 
-            395, 410, 400, 425, 440, 435,
-            455, 460, 450, 470, 485, 480,
+        data["mois_nom"] = data["month"].map(mois_noms)
 
-            390, 410, 405, 430, 445, 450,
-            465, 470, 480, 490, 500, 510
-        ]
-    })
+        annees = sorted(data["annee"].dropna().unique())
 
-    annees = sorted(data["Année"].unique())
-
-    annee_selectionnee = st.selectbox(
-        "Choisir l'année à afficher",
-        annees,
-        index=len(annees) - 1
-    )
-
-    data_filtre = data[data["Année"] == annee_selectionnee]
-
-    recette_totale = data_filtre["Recettes"].sum()
-    transaction_totale = data_filtre["Transactions"].sum()
-    recette_moyenne = data_filtre["Recettes"].mean()
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric(
-            "Recette totale",
-            f"{recette_totale:,.2f} DH"
+        annee_selectionnee = st.selectbox(
+            "Choisir l'année à afficher",
+            annees,
+            index=len(annees) - 1
         )
 
-    with col2:
-        st.metric(
-            "Transactions totales",
-            f"{transaction_totale:,.0f}"
+        data_filtre = data[data["annee"] == annee_selectionnee].copy()
+        data_filtre = data_filtre.sort_values("month")
+
+        recette_totale = data_filtre["recettes"].sum()
+        transaction_totale = data_filtre["transactions"].sum()
+        recette_moyenne = data_filtre["recettes"].mean()
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                "Recette totale",
+                f"{recette_totale:,.2f} DH"
+            )
+
+        with col2:
+            st.metric(
+                "Transactions totales",
+                f"{transaction_totale:,.0f}"
+            )
+
+        with col3:
+            st.metric(
+                "Recette moyenne mensuelle",
+                f"{recette_moyenne:,.2f} DH"
+            )
+
+        st.subheader(f"Évolution mensuelle des recettes - {annee_selectionnee}")
+
+        fig, ax = plt.subplots()
+        ax.plot(
+            data_filtre["mois_nom"],
+            data_filtre["recettes"],
+            marker="o"
         )
+        ax.set_xlabel("Mois")
+        ax.set_ylabel("Recettes en DH")
+        ax.set_title(f"Recettes mensuelles - {annee_selectionnee}")
+        ax.grid(True, alpha=0.3)
+        st.pyplot(fig)
 
-    with col3:
-        st.metric(
-            "Recette moyenne mensuelle",
-            f"{recette_moyenne:,.2f} DH"
+        st.subheader(f"Transactions mensuelles - {annee_selectionnee}")
+
+        fig, ax = plt.subplots()
+        ax.bar(
+            data_filtre["mois_nom"],
+            data_filtre["transactions"]
         )
+        ax.set_xlabel("Mois")
+        ax.set_ylabel("Nombre de transactions")
+        ax.set_title(f"Transactions mensuelles - {annee_selectionnee}")
+        ax.grid(True, axis="y", alpha=0.3)
+        st.pyplot(fig)
 
-    st.subheader(f"Évolution mensuelle des recettes - {annee_selectionnee}")
+        with st.expander("Afficher les données mensuelles"):
+            st.dataframe(
+                data_filtre[["date", "recettes", "transactions", "trimestre"]],
+                use_container_width=True
+            )
 
-    fig, ax = plt.subplots()
-    ax.plot(data_filtre["Mois"], data_filtre["Recettes"], marker="o")
-    ax.set_xlabel("Mois")
-    ax.set_ylabel("Recettes en DH")
-    ax.set_title(f"Recettes mensuelles - {annee_selectionnee}")
-    st.pyplot(fig)
-
-    st.subheader(f"Transactions mensuelles - {annee_selectionnee}")
-
-    fig, ax = plt.subplots()
-    ax.bar(data_filtre["Mois"], data_filtre["Transactions"])
-    ax.set_xlabel("Mois")
-    ax.set_ylabel("Nombre de transactions")
-    ax.set_title(f"Transactions mensuelles - {annee_selectionnee}")
-    st.pyplot(fig)
+    except Exception as e:
+        st.error(f"Erreur lors du chargement des données : {e}")
 # =========================
 # PAGE INFORMATIONS TECHNIQUES
 # =========================

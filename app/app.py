@@ -100,14 +100,8 @@ with st.sidebar:
 # =========================
 # HEADER
 # =========================
-col_logo, col_title = st.columns([1, 6])
-
-with col_logo:
-    st.image(str(LOGO_PATH), width=90)
-
-with col_title:
-    st.title("Solution MLOps de Prévision des Recettes")
-    st.markdown("### Chambre de Commerce, d’Industrie et de Services Tanger-Tétouan-Al Hoceima")
+st.title("Solution MLOps de Prévision des Recettes")
+st.markdown("### Chambre de Commerce, d’Industrie et de Services Tanger-Tétouan-Al Hoceima")
 
 
 # =========================
@@ -151,21 +145,6 @@ if page == "Accueil":
         </div>
         """, unsafe_allow_html=True)
 
-    st.subheader("Vérification de l’API")
-
-    if st.button("Tester la connexion API"):
-        try:
-            response = requests.get(f"{API_URL}/health", timeout=10)
-
-            if response.status_code == 200:
-                st.success("API disponible et fonctionnelle")
-                st.json(response.json())
-            else:
-                st.error(f"API non disponible : {response.status_code}")
-
-        except Exception as e:
-            st.error(f"Erreur de connexion à l'API : {e}")
-
 
 # =========================
 # PAGE PREVISION GLOBALE
@@ -206,8 +185,6 @@ elif page == "Prévision globale":
                     value=f"{prediction:,.2f} DH"
                 )
 
-                st.subheader("Réponse API")
-                st.json(result)
 
             else:
                 st.error(f"Erreur API : {response.status_code}")
@@ -289,8 +266,6 @@ elif page == "Prévision par segment":
                     value=f"{prediction:,.2f} DH"
                 )
 
-                st.subheader("Réponse API")
-                st.json(result)
 
             else:
                 st.error(f"Erreur API : {response.status_code}")
@@ -308,47 +283,90 @@ elif page == "Visualisation générale":
 
     st.markdown("""
     <div class="main-card">
-        Cette partie présente une vue générale et synthétique des recettes.
-        Elle sert à donner une lecture rapide de l’évolution, sans entrer dans une analyse détaillée.
+        Cette page présente une vue synthétique des recettes et des transactions.
+        L'utilisateur peut filtrer les indicateurs et les graphiques par année.
     </div>
     """, unsafe_allow_html=True)
 
     data = pd.DataFrame({
-        "Mois": ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin"],
-        "Recettes": [120000, 135000, 128000, 150000, 162000, 158000],
-        "Transactions": [320, 350, 330, 390, 410, 400]
+        "Année": [2024]*12 + [2025]*12 + [2026]*12,
+        "Mois": [
+            "Jan", "Fév", "Mar", "Avr", "Mai", "Juin",
+            "Juil", "Août", "Sep", "Oct", "Nov", "Déc"
+        ] * 3,
+        "Recettes": [
+            95000, 102000, 98000, 110000, 115000, 108000,
+            120000, 118000, 125000, 130000, 127000, 135000,
+
+            138000, 142000, 136000, 148000, 152000, 150000,
+            158000, 160000, 155000, 165000, 170000, 168000,
+
+            120583, 130000, 128000, 136000, 142000, 145000,
+            150000, 152000, 158000, 160000, 166000, 170000
+        ],
+        "Transactions": [
+            280, 300, 295, 320, 335, 310,
+            345, 340, 355, 370, 365, 390,
+
+            395, 410, 400, 425, 440, 435,
+            455, 460, 450, 470, 485, 480,
+
+            390, 410, 405, 430, 445, 450,
+            465, 470, 480, 490, 500, 510
+        ]
     })
+
+    annees = sorted(data["Année"].unique())
+
+    annee_selectionnee = st.selectbox(
+        "Choisir l'année à afficher",
+        annees,
+        index=len(annees) - 1
+    )
+
+    data_filtre = data[data["Année"] == annee_selectionnee]
+
+    recette_totale = data_filtre["Recettes"].sum()
+    transaction_totale = data_filtre["Transactions"].sum()
+    recette_moyenne = data_filtre["Recettes"].mean()
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric("Recettes moyennes", "142 166 DH")
+        st.metric(
+            "Recette totale",
+            f"{recette_totale:,.2f} DH"
+        )
 
     with col2:
-        st.metric("Transactions moyennes", "366")
+        st.metric(
+            "Transactions totales",
+            f"{transaction_totale:,.0f}"
+        )
 
     with col3:
-        st.metric("Tendance", "Positive")
+        st.metric(
+            "Recette moyenne mensuelle",
+            f"{recette_moyenne:,.2f} DH"
+        )
 
-    st.subheader("Évolution générale des recettes")
+    st.subheader(f"Évolution mensuelle des recettes - {annee_selectionnee}")
+
     fig, ax = plt.subplots()
-    ax.plot(data["Mois"], data["Recettes"], marker="o")
+    ax.plot(data_filtre["Mois"], data_filtre["Recettes"], marker="o")
     ax.set_xlabel("Mois")
-    ax.set_ylabel("Recettes")
-    ax.set_title("Évolution générale des recettes")
+    ax.set_ylabel("Recettes en DH")
+    ax.set_title(f"Recettes mensuelles - {annee_selectionnee}")
     st.pyplot(fig)
 
-    st.subheader("Vue générale des transactions")
+    st.subheader(f"Transactions mensuelles - {annee_selectionnee}")
+
     fig, ax = plt.subplots()
-    ax.bar(data["Mois"], data["Transactions"])
+    ax.bar(data_filtre["Mois"], data_filtre["Transactions"])
     ax.set_xlabel("Mois")
-    ax.set_ylabel("Transactions")
-    ax.set_title("Vue générale des transactions")
+    ax.set_ylabel("Nombre de transactions")
+    ax.set_title(f"Transactions mensuelles - {annee_selectionnee}")
     st.pyplot(fig)
-
-    st.info("Cette visualisation est indicative. Elle peut être remplacée plus tard par des données réelles issues de PostgreSQL ou de l’API.")
-
-
 # =========================
 # PAGE INFORMATIONS TECHNIQUES
 # =========================

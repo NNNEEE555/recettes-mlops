@@ -341,22 +341,22 @@ elif page == "Visualisation générale":
 
             chart_recettes = data_filtre.set_index("mois_nom")[["recettes"]]
 
-            st.line_chart(
-                chart_recettes,
-                height=300,
-                use_container_width=True
-    )
+            st.area_chart(
+    chart_recettes,
+    height=300,
+    use_container_width=True
+)
 
         with col_graph2:
             st.subheader("Évolution des transactions")
 
             chart_transactions = data_filtre.set_index("mois_nom")[["transactions"]]
 
-            st.line_chart(
-                chart_transactions,
-                height=300,
-                use_container_width=True
-    )
+            st.area_chart(
+    chart_transactions,
+    height=300,
+    use_container_width=True
+)
 
         tableau = data_filtre[["date", "recettes", "transactions"]].copy()
         tableau.columns = ["Date", "Recettes", "Transactions"]

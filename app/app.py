@@ -282,6 +282,7 @@ elif page == "Prévision par segment":
 # PAGE VISUALISATION GENERALE
 # =========================
 elif page == "Visualisation générale":
+
     st.header("Visualisation générale")
 
     st.markdown("""
@@ -317,65 +318,55 @@ elif page == "Visualisation générale":
         data_filtre = data[data["annee"] == annee_selectionnee].copy()
         data_filtre = data_filtre.sort_values("month")
 
-        recette_totale = data_filtre["recettes"].sum()
-        transaction_totale = data_filtre["transactions"].sum()
+        recettes_totales = data_filtre["recettes"].sum()
+        transactions_totales = data_filtre["transactions"].sum()
         recette_moyenne = data_filtre["recettes"].mean()
 
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.metric(
-                "Recette totale",
-                f"{recette_totale:,.2f} DH"
-            )
+            st.metric("Recettes totales", f"{recettes_totales:,.0f} DH")
 
         with col2:
-            st.metric(
-                "Transactions totales",
-                f"{transaction_totale:,.0f}"
-            )
+            st.metric("Transactions totales", f"{transactions_totales:,.0f}")
 
         with col3:
-            st.metric(
-                "Recette moyenne mensuelle",
-                f"{recette_moyenne:,.2f} DH"
-            )
+            st.metric("Recette moyenne mensuelle", f"{recette_moyenne:,.0f} DH")
 
-        st.subheader(f"Évolution mensuelle des recettes - {annee_selectionnee}")
+        st.markdown("### Tableau de bord mensuel")
 
-        fig, ax = plt.subplots()
-        ax.plot(
-            data_filtre["mois_nom"],
-            data_filtre["recettes"],
-            marker="o"
-        )
-        ax.set_xlabel("Mois")
-        ax.set_ylabel("Recettes en DH")
-        ax.set_title(f"Recettes mensuelles - {annee_selectionnee}")
-        ax.grid(True, alpha=0.3)
-        st.pyplot(fig)
+        col_graph1, col_graph2 = st.columns(2)
 
-        st.subheader(f"Transactions mensuelles - {annee_selectionnee}")
+        with col_graph1:
+            st.subheader("Évolution des recettes")
 
-        fig, ax = plt.subplots()
-        ax.bar(
-            data_filtre["mois_nom"],
-            data_filtre["transactions"]
-        )
-        ax.set_xlabel("Mois")
-        ax.set_ylabel("Nombre de transactions")
-        ax.set_title(f"Transactions mensuelles - {annee_selectionnee}")
-        ax.grid(True, axis="y", alpha=0.3)
-        st.pyplot(fig)
+            fig, ax = plt.subplots(figsize=(5, 3))
+            ax.plot(data_filtre["mois_nom"], data_filtre["recettes"], marker="o", linewidth=2)
+            ax.set_xlabel("Mois")
+            ax.set_ylabel("Recettes (DH)")
+            ax.grid(True, alpha=0.3)
+            plt.xticks(rotation=45)
+            st.pyplot(fig, use_container_width=True)
 
-        with st.expander("Afficher les données mensuelles"):
-            st.dataframe(
-                data_filtre[["date", "recettes", "transactions", "trimestre"]],
-                use_container_width=True
-            )
+        with col_graph2:
+            st.subheader("Évolution des transactions")
+
+            fig, ax = plt.subplots(figsize=(5, 3))
+            ax.plot(data_filtre["mois_nom"], data_filtre["transactions"], marker="o", linewidth=2)
+            ax.set_xlabel("Mois")
+            ax.set_ylabel("Transactions")
+            ax.grid(True, alpha=0.3)
+            plt.xticks(rotation=45)
+            st.pyplot(fig, use_container_width=True)
+
+        tableau = data_filtre[["date", "recettes", "transactions"]].copy()
+        tableau.columns = ["Date", "Recettes", "Transactions"]
+
+        st.dataframe(tableau, use_container_width=True)
 
     except Exception as e:
         st.error(f"Erreur lors du chargement des données : {e}")
+
 # =========================
 # PAGE INFORMATIONS TECHNIQUES
 # =========================

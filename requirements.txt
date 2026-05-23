@@ -10,3 +10,5 @@ python-dotenv==1.2.2
 python-multipart==0.0.28
 openpyxl==3.1.5
 requests==2.34.2
+streamlit==1.57.0
+matplotlib==3.10.8

@@ -2,7 +2,6 @@ import requests
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-import matplotlib.pyplot as plt
 
 API_URL = "https://recettes-mlops-production.up.railway.app"
 BASE_DIR = Path(__file__).resolve().parent
@@ -340,24 +339,24 @@ elif page == "Visualisation générale":
         with col_graph1:
             st.subheader("Évolution des recettes")
 
-            fig, ax = plt.subplots(figsize=(5, 3))
-            ax.plot(data_filtre["mois_nom"], data_filtre["recettes"], marker="o", linewidth=2)
-            ax.set_xlabel("Mois")
-            ax.set_ylabel("Recettes (DH)")
-            ax.grid(True, alpha=0.3)
-            plt.xticks(rotation=45)
-            st.pyplot(fig, use_container_width=True)
+            chart_recettes = data_filtre.set_index("mois_nom")[["recettes"]]
+
+            st.line_chart(
+                chart_recettes,
+                height=300,
+                use_container_width=True
+    )
 
         with col_graph2:
             st.subheader("Évolution des transactions")
 
-            fig, ax = plt.subplots(figsize=(5, 3))
-            ax.plot(data_filtre["mois_nom"], data_filtre["transactions"], marker="o", linewidth=2)
-            ax.set_xlabel("Mois")
-            ax.set_ylabel("Transactions")
-            ax.grid(True, alpha=0.3)
-            plt.xticks(rotation=45)
-            st.pyplot(fig, use_container_width=True)
+            chart_transactions = data_filtre.set_index("mois_nom")[["transactions"]]
+
+            st.line_chart(
+                chart_transactions,
+                height=300,
+                use_container_width=True
+    )
 
         tableau = data_filtre[["date", "recettes", "transactions"]].copy()
         tableau.columns = ["Date", "Recettes", "Transactions"]

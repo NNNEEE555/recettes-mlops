@@ -6,8 +6,8 @@ from pathlib import Path
 API_URL = "https://recettes-mlops-production.up.railway.app"
 BASE_DIR = Path(__file__).resolve().parent
 LOGO_PATH = Path(__file__).parent / "logo_ccistta.png"
-RECETTES_MENSUELLES_PATH = BASE_DIR / "data" / "recettes_mensuelles.xlsx"
-RECETTES_FEATURES_PATH = BASE_DIR / "data" / "recettes_features.xlsx"
+RECETTES_MENSUELLES_PATH = BASE_DIR / "data" / "recettes_mensuelles.csv"
+RECETTES_FEATURES_PATH = BASE_DIR / "data" / "recettes_features.csv"
 st.set_page_config(
     page_title="Prévision des recettes CCISTTA",
     page_icon="📊",
@@ -292,7 +292,7 @@ elif page == "Visualisation générale":
     """, unsafe_allow_html=True)
 
     try:
-        data = pd.read_excel(RECETTES_MENSUELLES_PATH)
+        data = pd.read_csv(RECETTES_MENSUELLES_PATH)
 
         data["date"] = pd.to_datetime(data["date"])
         data["annee"] = data["date"].dt.year

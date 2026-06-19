@@ -14,3 +14,4 @@ streamlit==1.57.0
 altair==4.2.2
 jinja2==3.0.3
 markupsafe==2.0.1
+astro-run-dag # This package is needed for the astro run command. It will be removed before a deploy

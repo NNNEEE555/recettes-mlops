@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 
-API_URL = "https://recettes-mlops-production.up.railway.app"
+API_URL = "http://127.0.0.1:9010"
 BASE_DIR = Path(__file__).resolve().parent
 LOGO_PATH = Path(__file__).parent / "logo_ccistta.png"
 RECETTES_MENSUELLES_PATH = BASE_DIR / "data" / "recettes_mensuelles.csv"
@@ -24,42 +24,50 @@ st.markdown("""
     }
 
     section[data-testid="stSidebar"] {
-        background-color: #FFFFFF;
+        width: 250px !important;
+        min-width: 250px !important;
+        max-width: 250px !important;
+        background: #FFFFFF !important;
         border-right: 1px solid #E5E7EB;
     }
 
+    section[data-testid="stSidebar"] img {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 12px;
+        margin-bottom: 25px;
+    }
+
     h1, h2, h3 {
-        color: #0B4F8A;
+        color: #0B2545;
         font-family: Arial, sans-serif;
     }
 
     .main-card {
         background-color: white;
-        padding: 25px;
-        border-radius: 14px;
+        padding: 22px;
+        border-radius: 18px;
         border-left: 6px solid #0B4F8A;
         box-shadow: 0px 4px 12px rgba(0,0,0,0.06);
         margin-bottom: 20px;
     }
 
-    .kpi-card {
-        background-color: white;
-        padding: 20px;
-        border-radius: 14px;
-        text-align: center;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.06);
-        border-top: 4px solid #008C45;
+    div[role="radiogroup"] > label {
+        background: transparent !important;
+        border-radius: 10px !important;
+        padding: 8px 10px !important;
+        margin-bottom: 4px !important;
     }
 
-    .kpi-title {
-        font-size: 15px;
-        color: #555;
+    div[role="radiogroup"] > label:hover {
+        background: #F1F5F9 !important;
     }
 
-    .kpi-value {
-        font-size: 24px;
-        font-weight: bold;
-        color: #0B4F8A;
+    div[role="radiogroup"] p {
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #1F2937 !important;
     }
 
     .stButton>button {
@@ -83,69 +91,118 @@ st.markdown("""
 # SIDEBAR
 # =========================
 with st.sidebar:
-    st.image(str(LOGO_PATH), width=120)
-    st.markdown("### CCISTTA")
-    st.caption("Solution MLOps de prévision des recettes")
+    st.image(str(LOGO_PATH), width=110)
+
+    st.markdown("""
+    <div style="margin-top:10px;">
+        <div style="font-size:16px; font-weight:700; color:#0B2545;">
+            CCISTTA
+        </div>
+        <div style="font-size:12px; color:#6B7280; line-height:1.5; margin-top:8px;">
+            Solution MLOps de<br>
+            prévision des recettes
+        </div>
+    </div>
+
+    <div style="font-size:12px; font-weight:700; color:#0B2545; margin-top:25px; margin-bottom:8px;">
+        Navigation
+    </div>
+    """, unsafe_allow_html=True)
 
     page = st.radio(
-        "Navigation",
+        "",
         [
-            "Accueil",
-            "Prévision globale",
-            "Prévision par segment",
-            "Visualisation générale",
-            "Informations techniques"
-        ]
+            "🏠 Accueil",
+            "📈 Prévision globale",
+            "🕒 Prévision par segment",
+            "📊 Visualisation générale",
+            "ℹ️ Informations techniques"
+        ],
+        label_visibility="collapsed"
     )
 
+    page = page.replace("🏠 ", "")
+    page = page.replace("📈 ", "")
+    page = page.replace("🕒 ", "")
+    page = page.replace("📊 ", "")
+    page = page.replace("ℹ️ ", "")
 
-# =========================
-# HEADER
-# =========================
-st.title("Solution MLOps de Prévision des Recettes")
-st.markdown("### Chambre de Commerce, d’Industrie et de Services Tanger-Tétouan-Al Hoceima")
+    st.markdown("""
+    <div style="
+        background:#EFF6FF;
+        border:1px solid #D7E8FF;
+        border-radius:12px;
+        padding:12px;
+        margin-top:70px;
+        color:#0B4F8A;
+        font-size:12px;
+        font-weight:600;
+        line-height:1.9;
+    ">
+        🛡️ Solution fiable<br>
+        🔐 Sécurisée<br>
+        📈 Évolutive
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # =========================
 # PAGE ACCUEIL
 # =========================
 if page == "Accueil":
-    st.markdown("""
-    <div class="main-card">
-        <h3>Objectif de la solution</h3>
-        <p>
-        Cette application permet d'exploiter un modèle de prévision des recettes à travers
-        une interface simple, accessible et professionnelle. Elle communique avec une API
-        FastAPI déployée sur Railway afin de générer des prévisions globales ou segmentées.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns(3)
+    st.title("Solution MLOps de Prévision des Recettes")
+    st.subheader("Chambre de Commerce, d’Industrie et de Services Tanger-Tétouan-Al Hoceima")
+
+    st.markdown("### 🛡️ Solution MLOps")
+
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.markdown("""
-        <div class="kpi-card">
-            <div class="kpi-title">Modèle</div>
-            <div class="kpi-value">XGBoost</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Modèle", "XGBoost")
+        st.caption("Algorithme performant de machine learning")
 
     with col2:
-        st.markdown("""
-        <div class="kpi-card">
-            <div class="kpi-title">API</div>
-            <div class="kpi-value">FastAPI</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("API", "FastAPI")
+        st.caption("API RESTful rapide et scalable")
 
     with col3:
-        st.markdown("""
-        <div class="kpi-card">
-            <div class="kpi-title">Déploiement</div>
-            <div class="kpi-value">Cloud</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Données", "Historiques")
+        st.caption("Données mensuelles fiables et consolidées")
+
+    with col4:
+        st.metric("Déploiement", "Cloud")
+        st.caption("Déploiement sécurisé et haute disponibilité")
+
+    st.markdown("---")
+
+    st.markdown("### Architecture de la solution")
+
+    a1, a2, a3, a4, a5 = st.columns(5)
+
+    with a1:
+        st.info("🗄️ **Données**\n\nHistoriques")
+
+    with a2:
+        st.info("🧠 **Modèle**\n\nXGBoost")
+
+    with a3:
+        st.info("⚡ **API**\n\nFastAPI")
+
+    with a4:
+        st.info("🖥️ **Interface**\n\nStreamlit")
+
+    with a5:
+        st.info("👥 **Utilisateurs**\n\nDécision")
+
+    st.markdown("---")
+
+    st.success(
+        "📈 **Anticipez, analysez et pilotez vos recettes en toute confiance.**\n\n"
+        "Accédez aux prévisions globales ou segmentées et suivez l’évolution des recettes en temps réel."
+    )
+
+    st.button("🚀 Commencez à prévoir")
 
 
 # =========================
@@ -324,47 +381,115 @@ elif page == "Visualisation générale":
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.metric("Recettes totales", f"{recettes_totales:,.0f} DH")
+            st.metric(
+                "Recettes totales",
+                f"{recettes_totales:,.0f} DH"
+            )
 
         with col2:
-            st.metric("Transactions totales", f"{transactions_totales:,.0f}")
+            st.metric(
+                "Transactions totales",
+                f"{transactions_totales:,.0f}"
+            )
 
         with col3:
-            st.metric("Recette moyenne mensuelle", f"{recette_moyenne:,.0f} DH")
+            st.metric(
+                "Recette moyenne mensuelle",
+                f"{recette_moyenne:,.0f} DH"
+            )
 
         st.markdown("### Tableau de bord mensuel")
 
         col_graph1, col_graph2 = st.columns(2)
 
+        # =========================
+        # GRAPHE RECETTES
+        # =========================
         with col_graph1:
-            st.subheader("Évolution des recettes")
 
-            chart_recettes = data_filtre.set_index("mois_nom")[["recettes"]]
+            st.subheader("Évolution mensuelle des recettes")
 
-            st.area_chart(
-    chart_recettes,
-    height=300,
-    use_container_width=True
-)
+            chart_recettes = data_filtre.set_index(
+                "mois_nom"
+            )[["recettes"]]
 
+            st.line_chart(
+                chart_recettes,
+                height=300,
+                use_container_width=True
+            )
+
+        # =========================
+        # GRAPHE TRANSACTIONS
+        # =========================
         with col_graph2:
-            st.subheader("Évolution des transactions")
 
-            chart_transactions = data_filtre.set_index("mois_nom")[["transactions"]]
+            st.subheader("Évolution mensuelle des transactions")
 
-            st.area_chart(
-    chart_transactions,
-    height=300,
-    use_container_width=True
-)
+            chart_transactions = data_filtre.set_index(
+                "mois_nom"
+            )[["transactions"]]
 
-        tableau = data_filtre[["date", "recettes", "transactions"]].copy()
-        tableau.columns = ["Date", "Recettes", "Transactions"]
+            st.line_chart(
+                chart_transactions,
+                height=300,
+                use_container_width=True
+            )
 
-        st.dataframe(tableau, use_container_width=True)
+        # =========================
+        # EVOLUTION ANNUELLE
+        # =========================
+        st.markdown("### Évolution annuelle globale")
+
+        data_annuelle = (
+            data.groupby("annee", as_index=False)
+            .agg({
+                "recettes": "sum",
+                "transactions": "sum"
+            })
+            .sort_values("annee")
+        )
+
+        col_year1, col_year2 = st.columns(2)
+
+        # =========================
+        # RECETTES ANNUELLES
+        # =========================
+        with col_year1:
+
+            st.subheader("Recettes annuelles")
+
+            chart_recettes_annuelles = (
+                data_annuelle.set_index("annee")[["recettes"]]
+            )
+
+            st.line_chart(
+                chart_recettes_annuelles,
+                height=300,
+                use_container_width=True
+            )
+
+        # =========================
+        # TRANSACTIONS ANNUELLES
+        # =========================
+        with col_year2:
+
+            st.subheader("Transactions annuelles")
+
+            chart_transactions_annuelles = (
+                data_annuelle.set_index("annee")[["transactions"]]
+            )
+
+            st.line_chart(
+                chart_transactions_annuelles,
+                height=300,
+                use_container_width=True
+            )
 
     except Exception as e:
-        st.error(f"Erreur lors du chargement des données : {e}")
+        st.error(
+            f"Erreur lors du chargement des données : {e}"
+        )
 
 # =========================
 # PAGE INFORMATIONS TECHNIQUES

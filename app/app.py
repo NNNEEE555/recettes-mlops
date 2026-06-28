@@ -2,8 +2,9 @@ import requests
 import streamlit as st
 import pandas as pd
 from pathlib import Path
+import os
 
-API_URL = "http://127.0.0.1:9010"
+API_URL = os.getenv("API_URL", "https://recettes-mlops-production.up.railway.app")
 BASE_DIR = Path(__file__).resolve().parent
 LOGO_PATH = Path(__file__).parent / "logo_ccistta.png"
 RECETTES_MENSUELLES_PATH = BASE_DIR / "data" / "recettes_mensuelles.csv"
